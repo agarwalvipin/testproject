@@ -29,22 +29,28 @@
 		}
 	}
 	
-	function get_all_subjects() {
+	function get_all_subjects($public = true) {
 		global $connection;
 		$query = "SELECT * 
-				FROM subjects 
-				ORDER BY position ASC";
+				FROM subjects ";
+		if ($public) {
+			$query .= "WHERE visible = 1 ";
+		}
+		$query .= "ORDER BY position ASC";
 		$subject_set = mysql_query($query, $connection);
 		confirm_query($subject_set);
 		return $subject_set;
 	}
 	
-	function get_pages_for_subject($subject_id) {
+	function get_pages_for_subject($subject_id, $public = true) {
 		global $connection;
 		$query = "SELECT * 
-				FROM pages 
-				WHERE subject_id = {$subject_id} 
-				ORDER BY position ASC";
+				FROM pages ";
+		$query .= "WHERE subject_id = {$subject_id} ";
+		if ($public) {
+			$query .= "AND visible = 1 ";
+		}
+		$query .= "ORDER BY position ASC";
 		$page_set = mysql_query($query, $connection);
 		confirm_query($page_set);
 		return $page_set;
@@ -83,49 +89,12 @@
 			return NULL;
 		}
 	}
-
-	function get_first_ten_orders() {
-		global $connection;
-		$query = "SELECT * ";
-		$query .= "FROM `order` ";
-		$query .= "ORDER BY TIME DESC ";
-		$query .= "LIMIT 10";
-		$firstTenOrder_set = mysql_query($query, $connection);
-		confirm_query($firstTenOrder_set);
-		// REMEMBER:
-		// if no rows are returned, fetch_array will return false
-		return $firstTenOrder_set;
-
-	}
 	
-	function get_order_by_id($order_id) {
-		global $connection;
-		$query = "SELECT * ";
-		$query .= "FROM order ";
-		$query .= "WHERE id=" . $order_id ." ";
-		$query .= "LIMIT 1";
-		$result_set = mysql_query($query, $connection);
-		confirm_query($result_set);
-		// REMEMBER:
-		// if no rows are returned, fetch_array will return false
-		if($order = mysql_fetch_array($result_set)) {
-			return $order;
-		} else {
-			return NULL;
-		}
-	}
-	function get_customer_by_id($customer_id) {
-		global $connection;
-		$query = "SELECT * ";
-		$query .= "FROM customer ";
-		$query .= "WHERE id=" . $customer_id ." ";
-		$query .= "LIMIT 1";
-		$result_set = mysql_query($query, $connection);
-		confirm_query($result_set);
-		// REMEMBER:
-		// if no rows are returned, fetch_array will return false
-		if ($customer = mysql_fetch_array($result_set)) {
-			return $customer;
+	function get_default_page($subject_id) {
+		// Get all visible pages
+		$page_set = get_pages_for_subject($subject_id, true);
+		if ($first_page = mysql_fetch_array($page_set)) {
+			return $first_page;
 		} else {
 			return NULL;
 		}
@@ -136,7 +105,7 @@
 		global $sel_page;
 		if (isset($_GET['subj'])) {
 			$sel_subject = get_subject_by_id($_GET['subj']);
-			$sel_page = NULL;
+			$sel_page = get_default_page($sel_subject['id']);
 		} elseif (isset($_GET['page'])) {
 			$sel_subject = NULL;
 			$sel_page = get_page_by_id($_GET['page']);
@@ -146,15 +115,15 @@
 		}
 	}
 
-	function navigation($sel_subject, $sel_page) {
+	function navigation($sel_subject, $sel_page, $public = false) {
 		$output = "<ul class=\"subjects\">";
-		$subject_set = get_all_subjects();
+		$subject_set = get_all_subjects($public);
 		while ($subject = mysql_fetch_array($subject_set)) {
 			$output .= "<li";
 			if ($subject["id"] == $sel_subject['id']) { $output .= " class=\"selected\""; }
 			$output .= "><a href=\"edit_subject.php?subj=" . urlencode($subject["id"]) . 
 				"\">{$subject["menu_name"]}</a></li>";
-			$page_set = get_pages_for_subject($subject["id"]);
+			$page_set = get_pages_for_subject($subject["id"], $public);
 			$output .= "<ul class=\"pages\">";
 			while ($page = mysql_fetch_array($page_set)) {
 				$output .= "<li";
@@ -168,4 +137,171 @@
 		return $output;
 	}
 
+	function public_navigation($sel_subject, $sel_page, $public = true) {
+		$output = "<ul class=\"subjects\">";
+		$subject_set = get_all_subjects($public);
+		while ($subject = mysql_fetch_array($subject_set)) {
+			$output .= "<li";
+			if ($subject["id"] == $sel_subject['id']) { $output .= " class=\"selected\""; }
+			$output .= "><a href=\"index.php?subj=" . urlencode($subject["id"]) . 
+				"\">{$subject["menu_name"]}</a></li>";
+			if ($subject["id"] == $sel_subject['id']) {	
+				$page_set = get_pages_for_subject($subject["id"], $public);
+				$output .= "<ul class=\"pages\">";
+				while ($page = mysql_fetch_array($page_set)) {
+					$output .= "<li";
+					if ($page["id"] == $sel_page['id']) { $output .= " class=\"selected\""; }
+					$output .= "><a href=\"index.php?page=" . urlencode($page["id"]) .
+						"\">{$page["menu_name"]}</a></li>";
+				}
+				$output .= "</ul>";
+			}
+		}
+		$output .= "</ul>";
+		return $output;
+	}
+		
+	function get_first_ten_orders() {
+		global $connection;
+		$query = "SELECT * ";
+		$query .= "FROM `order` ";
+		$query .= "ORDER BY OrderTime DESC ";
+		$query .= "LIMIT 10";
+		$firstTenOrder_set = mysql_query($query, $connection);
+		confirm_query($firstTenOrder_set);
+		// REMEMBER:
+		// if no rows are returned, fetch_array will return false
+		return $firstTenOrder_set;
+
+	}
+	
+	function get_order_by_id($order_id) {
+		global $connection;
+		$query = "SELECT * ";
+		$query .= "FROM `order` ";
+		$query .= "WHERE OrderId=".$order_id." ";
+		$query .= "LIMIT 1";
+		$result_set = mysql_query($query, $connection);
+		confirm_query($result_set);
+		// REMEMBER:
+		// if no rows are returned, fetch_array will return false
+		if($order = mysql_fetch_array($result_set)) {
+			return $order;
+		} else {
+			return NULL;
+		}
+	}
+	
+	
+	function getFirstOrder() {
+		global $connection;
+		$query = "SELECT * ";
+		$query .= "FROM  `order` ";
+		$query .= "LIMIT 1";
+		$result_set = mysql_query($query, $connection);
+		confirm_query($result_set);
+		if ($order = mysql_fetch_array($result_set)) {
+			return $order;
+		} else {
+			return NULL;
+		}
+	}
+	
+	function getOrderByPhoneNum($phoneNum) {
+		global $connection;
+		$query = "SELECT * ";
+		$query .= "FROM  `order` ord,  `customer` cust ";
+		$query .= "WHERE cust.MobileNum =" . $phoneNum ." ";
+		$query .= "AND ord.CustomerId = cust.CustomerId ";
+		$query .= "ORDER by ord.OrderDate DESC ";
+		$query .= "LIMIT 1";
+		echo "<p>inside getOrderByPhoneNum ".$query." </p>";
+		$result_set = mysql_query($query, $connection);
+		confirm_query($result_set);
+		if ($order = mysql_fetch_array($result_set)) {
+			return $order;
+		} else {
+			return NULL;
+		}
+	}
+	
+	function getCustomerByPhoneNum($phoneNum) {
+		global $connection;
+		$query = "SELECT * ";
+		$query .= "FROM `customer`";
+		$query .= "WHERE MobileNum =" . $phoneNum ." ";
+		$query .= "LIMIT 1";
+		$result_set = mysql_query($query, $connection);
+		confirm_query($result_set);
+		if ($customer = mysql_fetch_array($result_set)) {
+			return $customer;
+		} else {
+			return NULL;
+		}
+	}
+	
+	function getCustomerByOrderId($ordNum) {
+		global $connection;
+		$query = "SELECT c.* ";
+		$query .= "FROM `customer` c, `order` o ";
+		$query .= "WHERE o.OrderId=" . $ordNum ." ";
+		$query .= "and o.CustomerId = c.CustomerId";
+		$query .= "LIMIT 1";
+		$result_set = mysql_query($query, $connection);
+		confirm_query($result_set);
+		if ($customer = mysql_fetch_array($result_set)) {
+			return $customer;
+		} else {
+			return NULL;
+		}
+	}
+	
+	function getDealerByPhoneNum($phoneNum) {
+		global $connection;
+		$query = "SELECT * ";
+		$query .= "FROM `Dealer`";
+		$query .= "WHERE MobileNum =" . $phoneNum ." ";
+		$query .= "LIMIT 1";
+		$result_set = mysql_query($query, $connection);
+		confirm_query($result_set);
+		if ($customer = mysql_fetch_array($result_set)) {
+			return $customer;
+		} else {
+			return NULL;
+		}
+	}
+	
+	function getDealerByOrderId($ordNum) {
+		global $connection;
+		$query = "SELECT d.* ";
+		$query .= "FROM `dealer` d, `order` o ";
+		$query .= "WHERE o.OrderId=" . $ordNum ." ";
+		$query .= "and o.DealerId = d.DealerId";
+		$query .= "LIMIT 1";
+		$result_set = mysql_query($query, $connection);
+		confirm_query($result_set);
+		if ($dealer = mysql_fetch_array($result_set)) {
+			return $dealer;
+		} else {
+			return NULL;
+		}
+	}
+	
+	function get_customer_by_id($customer_id) {
+		global $connection;
+		$query = "SELECT * ";
+		$query .= "FROM customer ";
+		$query .= "WHERE CustomerId=" . $customer_id ." ";
+		$query .= "LIMIT 1";
+		$result_set = mysql_query($query, $connection);
+		confirm_query($result_set);
+		// REMEMBER:
+		// if no rows are returned, fetch_array will return false
+		if ($customer = mysql_fetch_array($result_set)) {
+			return $customer;
+		} else {
+			return NULL;
+		}
+	}
+	
 ?>

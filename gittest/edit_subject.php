@@ -9,7 +9,7 @@
 
 			$required_fields = array('menu_name', 'position', 'visible');
 			foreach($required_fields as $fieldname) {
-				if (!isset($_POST[$fieldname]) || empty($_POST[$fieldname])) { 
+				if (!isset($_POST[$fieldname]) || (empty($_POST[$fieldname]) && $_POST[$fieldname] != 0)) { 
 					$errors[] = $fieldname; 
 				}
 			}
@@ -108,6 +108,20 @@
 			</form>
 			<br />
 			<a href="content.php">Cancel</a>
+			<div style="margin-top: 2em; border-top: 1px solid #000000;">
+				<h3>Pages in this subject:</h3>
+				<ul>
+<?php 
+	$subject_pages = get_pages_for_subject($sel_subject['id']);
+	while($page = mysql_fetch_array($subject_pages)) {
+		echo "<li><a href=\"content.php?page={$page['id']}\">
+		{$page['menu_name']}</a></li>";
+	}
+?>
+				</ul>
+				<br />
+				+ <a href="new_page.php?subj=<?php echo $sel_subject['id']; ?>">Add a new page to this subject</a>
+			</div>
 		</td>
 	</tr>
 </table>

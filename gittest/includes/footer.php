@@ -1,11 +1,8 @@
-            </div>
-            <div id="footer">Copyright 2013, Raddee.com</div>
-    </body>
+		</div>
+		<div id="footer">Copyright 2007, Widget Corp</div>
+	</body>
 </html>
 <?php
-    //5. Close connection
-    if(isset($connection))
-    {
-        mysql_close($connection);
-    }
+	// 5. Close connection
+	mysql_close($connection);
 ?>

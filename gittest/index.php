@@ -1,20 +1,23 @@
-<?php include("includes/functions.php"); ?>
+<?php require_once("includes/connection.php"); ?>
+<?php require_once("includes/functions.php"); ?>
+
+<?php find_selected_page(); ?>
 <?php include("includes/header.php"); ?>
 <table id="structure">
-    <tr>
-        <td id="navigation">
-            &nbsp;
-        </td>
-        <td id="page">
-            <h2>Staff Menu</h2>
-            <p>Welcome to the staff area</p>
-            <ul>
-                <li><a href="content.php">Manage Web Content</a></li>
-                <li><a href="customercare.php">Customer Care</a></li>
-                <li><a href="new_user.php">Add Staff User</a></li>
-                <li><a href="logout.php">Logout</a></li>
-             </ul>
-        </td>
-    </tr>
+	<tr>
+		<td id="navigation">
+			<?php echo public_navigation($sel_subject, $sel_page); ?>
+		</td>
+		<td id="page">
+			<?php if ($sel_page) { ?>
+				<h2><?php echo htmlentities($sel_page['menu_name']); ?></h2>
+				<div class="page-content">
+					<?php echo strip_tags(nl2br($sel_page['content']), "<b><br><p><a>"); ?>
+				</div>
+			<?php } else { ?>
+				<h2>Welcome to Widget Corp</h2>
+			<?php } ?>
+		</td>
+	</tr>
 </table>
 <?php include("includes/footer.php"); ?>
